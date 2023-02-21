@@ -104,7 +104,7 @@ The current state is indicated by the taskbar icon. It can be in the following s
     </li>
 </ul>
 
-## Configurating the application
+## Configuring the application
 Right now the application can only be configured via the config.ini file. The file in seperated into different sections. In order to change the settings of the application you have to edit the config.ini file. The settings of each section are described in the tables below.
 
 ### Menu items
