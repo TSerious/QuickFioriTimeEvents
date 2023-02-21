@@ -26,3 +26,5 @@ To use the tool [Firefox](https://www.mozilla.org/de/firefox/new/) needs to be i
 
 ### Autostart
 In order to start the tool with Windows, it needs to be put into the *Startup* directory. To open the *Startup* directory, hit the keys Win+R, type <code>shell:startup</code> into the opened form (window) and click ok. Afterwards create a shortcut of the *QuickFioriTimeEvents.exe* (right click on the exe and select *Create shortcut*) and copy the just created shortcut to the *Startup* directory. From now on the tool will be started when Windows is started.
+
+![The San Juan Mountains are beautiful!](/Icons/default.ico "San Juan Mountains")
