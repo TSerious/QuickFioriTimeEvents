@@ -19,8 +19,10 @@ import os
 def tray_quit(icon, item):
     logging.debug(sys._getframe().f_code.co_name)
     app.ping()
-    icon.stop()
-    window.quit()
+    app.stopLogging()
+    app.trayIcon.stop()
+    window.destroy()
+    exit()
 
 def tray_show_work_time(icon, item):
     logging.debug(sys._getframe().f_code.co_name)
@@ -255,3 +257,4 @@ menu = tuple(menuItems)
 app.trayIcon = pystray.Icon("name", image, "QuickFioriTimeEvents", menu)
 app.trayIcon.run_detached()
 window.mainloop()
+os._exit(0)
