@@ -440,6 +440,9 @@ class TrayApplication:
         elif self.logged_leave_datetime != None:
             image = Icons.LoggedClockOut
 
+        elif self.last_leave_datetime != None:
+            image = Icons.ClockedOut
+
         else:
             image = Icons.Default
 
