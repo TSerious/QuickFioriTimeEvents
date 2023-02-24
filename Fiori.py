@@ -2,12 +2,14 @@ from bs4 import BeautifulSoup
 import datetime
 from selenium.webdriver.remote.webdriver import BaseWebDriver
 from selenium import webdriver
-from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile;
+from selenium.webdriver.edge.options import Options as edOptions
 from selenium.webdriver.common.keys import Keys
 from subprocess import CREATE_NO_WINDOW
 import time
@@ -15,6 +17,11 @@ from Config import Settings;
 import Config;
 from enum import Enum
 import DatetimeConverters as dtConvert
+
+class Driver(Enum):
+    Firefox = "Firefox"
+    Edge = "Edge"
+    NotDefined = "NotDefined"
 
 class FioriEvent(Enum):
     NotDefined = 0
@@ -68,12 +75,13 @@ class FioriState:
     PauseStartTime:datetime = None
 
 class DriverSettings:
-    def __init__(self, frefoxProfilePath:str, firefoxBinaryPath:str, url:str, urlHome:str, urlTime:str):
-        self._frefoxProfilePath = frefoxProfilePath
-        self._firefoxBinaryPath = firefoxBinaryPath
+    def __init__(self, type:Driver, profilePath:str, binaryPath:str, url:str, urlHome:str, urlTime:str):
+        self._frefoxProfilePath = profilePath
+        self._firefoxBinaryPath = binaryPath
         self._url = url
         self._urlHome = urlHome
         self._urlTime = urlTime
+        self._type = type
 
     @property
     def url(self):
@@ -87,12 +95,16 @@ class DriverSettings:
         return self._urlTime
 
     @property
-    def firefox_profile_path(self):
+    def profile_path(self):
         return self._frefoxProfilePath
 
     @property
-    def firefox_binary_path(self):
+    def binary_path(self):
         return self._firefoxBinaryPath
+    
+    @property
+    def type(self):
+        return self._type
 
     def get_url_home(self):
         return self.url + self.url_home
@@ -101,12 +113,18 @@ class DriverSettings:
         return self.url + self.url_time
     
 def get_driver(settings: DriverSettings, closeInstance:bool) -> BaseWebDriver:
-    fp = FirefoxProfile(settings.firefox_profile_path)
-    binary = FirefoxBinary(settings.firefox_binary_path) 
 
-    ffService = Service('geckodriver\geckodriver.exe')
-    ffService.creation_flags = CREATE_NO_WINDOW
-    driver:BaseWebDriver = webdriver.Firefox(firefox_binary=binary, firefox_profile=fp, service=ffService)
+    driver:BaseWebDriver = None
+
+    if settings.type == Driver.Firefox:
+        driver = get_firefox_driver(settings, closeInstance)
+    
+    if settings.type == Driver.Edge:
+        driver = get_edge_driver(settings, closeInstance)
+
+    if driver == None:
+        raise Exception("Couldn't creat a web driver.")
+
     driver.minimize_window()
     driver.get(settings.get_url_home())
 
@@ -115,6 +133,26 @@ def get_driver(settings: DriverSettings, closeInstance:bool) -> BaseWebDriver:
             driver.quit()
 
         raise Exception("Sign in is required")
+
+    return driver
+
+def get_firefox_driver(settings:DriverSettings, closeInstance:bool) -> BaseWebDriver:
+    fp = FirefoxProfile(settings.profile_path)
+    binary = FirefoxBinary(settings.binary_path) 
+
+    ffService = FirefoxService('geckodriver\geckodriver.exe')
+    ffService.creation_flags = CREATE_NO_WINDOW
+    driver:BaseWebDriver = webdriver.Firefox(firefox_binary=binary, firefox_profile=fp, service=ffService)
+
+    return driver
+
+def get_edge_driver(settings:DriverSettings, closeInstance:bool) -> BaseWebDriver:
+    options = edOptions()
+    options.headless = False
+    options.add_argument('user-data-dir='+settings.profile_path)
+    options.binary_location = settings.binary_path
+    edService = EdgeService('edgedriver\msedgedriver.exe')
+    driver:BaseWebDriver = webdriver.Edge(options=options, service=edService)
 
     return driver
 
@@ -129,7 +167,7 @@ def get_element(driver:BaseWebDriver, by:By, value:str):
     try:
         element = driver.find_element(By.ID, 'serviceErrorMessageBox')
     except Exception as e:
-        print("Exception catched when trying to get element: " + str(by) + ":" + str(value))
+        print("Exception catched when trying to get element: " + str(by) + ":" + str(value) + " | " + str(e))
         element = None
 
     return element
@@ -181,9 +219,17 @@ def get_logged_events(driver:BaseWebDriver):
 
     time.sleep(2)
     events = wait_and_get_element(driver, By.ID, '__xmlview0--idEventsTable-listUl').text.split('\n')
+    i = get_first_event_index(events)
+
+    if i < 0:
+        events = wait_and_get_element(driver, By.ID, '__xmlview0--idEventsTable-listUl').text.split('\n')
+        i = get_first_event_index(events)
 
     listOfEvents = []
-    i = 3
+
+    if i < 0:
+        return listOfEvents
+
     while i < len(events):
         event = FioriEvent.get_event(events[i])
 
@@ -196,6 +242,19 @@ def get_logged_events(driver:BaseWebDriver):
         i += 4
 
     return listOfEvents
+
+def get_first_event_index(events) -> int:
+    firstEvent = -1
+    i = 0
+    while i < len(events) and firstEvent < 0:
+
+        event = FioriEvent.get_event(events[i])
+        if event != FioriEvent.NotDefined:
+            firstEvent = i
+
+        i += 1
+
+    return firstEvent
 
 def get_has_event_and_time(events, event:FioriEvent):
     print("Getting has event " + str(event))
@@ -306,9 +365,18 @@ class QuickFioriTimeEvents:
         self.PauseStartEvent = settings.get(Config.Sections.General, Config.General.PauseStartEvent)
         self.PauseEndEvent = settings.get(Config.Sections.General, Config.General.PauseEndEvent)
         self.WaitTimeAfterPageLoad = int(settings.get(Config.Sections.General, Config.General.WaitTimeAfterPageLoad))
+
+        driverType = Driver.Firefox
+        setDriverType = settings.get(Config.Sections.General, Config.General.Driver)
+        if setDriverType == Driver.Firefox.value:
+            driverType = Driver.Firefox
+        elif setDriverType == Driver.Edge.value:
+            driverType = Driver.Edge            
+
         self.driverSettings:DriverSettings = DriverSettings(
-            settings.get(Config.Sections.General, Config.General.FirefoxProfilePath),
-            settings.get(Config.Sections.General, Config.General.FirefoxBinaryPath),
+            driverType,
+            settings.get(Config.Sections.General, Config.General.ProfilePath),
+            settings.get(Config.Sections.General, Config.General.BinaryPath),
             settings.get(Config.Sections.General, Config.General.Url),
             settings.get(Config.Sections.General, Config.General.UrlHome),
             settings.get(Config.Sections.General, Config.General.UrlTime),

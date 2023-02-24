@@ -19,14 +19,13 @@ The tool is shown as a small icon <img src="/Icons/default.ico" alt="taskbar ico
 - Get the current work time from SAP Fiori
 
 ## Disclaimer
-So far this is a Windows only tool. It uses [BeautifulSoup](https://pypi.org/project/beautifulsoup4/) and requires [Firefox](https://www.mozilla.org/de/firefox/new/) to interact with the Fiori website.
+So far this is a Windows only tool. It uses [BeautifulSoup](https://pypi.org/project/beautifulsoup4/) and requires Edge or [Firefox](https://www.mozilla.org/de/firefox/new/) to interact with the Fiori website.
 
 ## Installation
-To use the tool [Firefox](https://www.mozilla.org/de/firefox/new/) needs to be installed. The tool does not need to be installed just run it.
-When run for the first time, you need to define the url for *Fiori*. Open a browser navigate to your Fiori website and copy the address into the shown window.<br/>
+The tool does not need to be installed just run it.
+When run for the first time, you will be asked weather to use Edge or Firefox.
+On the first start, you also need to define the url for *Fiori*. Open a browser navigate to your Fiori website and copy the address into the shown window.<br/>
 <img src="/Readme_Images/FioriUrl.PNG" alt="taskbar icon"/>
-
-When run for the first time, the tool also searches for an installation of Firefox. This is done in the background and usually doesn't require any inputs. But the paths can also be defined in the config.ini file.
 
 ### Autostart
 In order to start the tool with Windows, it needs to be put into the *Startup* directory. To open the *Startup* directory, hit the keys Win+R, type <code>shell:startup</code> into the opened form (window) and click ok. Afterwards create a shortcut of the *QuickFioriTimeEvents.exe* (right click on the exe and select *Create shortcut*) and copy the just created shortcut to the *Startup* directory. From now on the tool will be started when Windows is started.
@@ -162,17 +161,17 @@ In order to customize what is shown in the right click menu you have to change t
         <tr>
             <td>[General]MinLogLevel</td>
             <td></td>
-            <td>The minimum level of log entries. CRITICAL = 50, ERROR = 40, WARNING = 30, INFO = 20, DEBUG = 10, NOTSET = 0</td>
+            <td>The minimum level of log entries.<br/>CRITICAL = 50, ERROR = 40, WARNING = 30,<br/>INFO = 20, DEBUG = 10, NOTSET = 0</td>
         </tr>
         <tr>
             <td>[General]ClearLog</td>
             <td>True</td>
-            <td>A value indicating whether the log shall be deleted each time the software starts.</td>
+            <td>A value indicating whether the log shall be deleted,<br/>each time the software starts.</td>
         </tr>
         <tr>
             <td>[General]WaitTimeAfterPageLoad</td>
             <td>10</td>
-            <td>The time in seconds to wait after the initial page is loaded in the browser instance.</td>
+            <td>The time in seconds to wait after the initial page<br/>is loaded in the browser instance.</td>
         </tr>
         <tr>
             <td>[General]Url</td>
@@ -190,19 +189,24 @@ In order to customize what is shown in the right click menu you have to change t
             <td>The path to the 'Time' page.</td>
         </tr>
         <tr>
-            <td>[General]FirefoxProfilePath</td>
+            <td>[General]Driver</td>
             <td></td>
-            <td>The path where the firefox profile is stored.</td>
+            <td>The browser (or driver) that is used to interact with SAP Fiori.<br/>Currently <code>Edge</code> or <code>Firefox</code> are supported.</td>
         </tr>
         <tr>
-            <td>[General]FirefoxBinaryPath</td>
+            <td>[General]ProfilePath</td>
             <td></td>
-            <td>The path where the firefox executable us located.</td>
+            <td>The path where the profile of the used browser (driver) is stored.</td>
         </tr>
         <tr>
-            <td>[General]CheckFirefoxProfilePath</td>
+            <td>[General]BinaryPath</td>
+            <td></td>
+            <td>The path where the executable of the used browser (driver) us located.</td>
+        </tr>
+        <tr>
+            <td>[General]CheckProfilePath</td>
             <td>True</td>
-            <td>A value whether to check if [General]FirefoxBinaryPath is set.</td>
+            <td>A value whether to check if [General]ProfilePath is set.</td>
         </tr>
         <tr>
             <td>[General]ArriveEvent</td>
@@ -227,22 +231,22 @@ In order to customize what is shown in the right click menu you have to change t
         <tr>
             <td>[General]PauseStartCommand</td>
             <td>shutdown.exe /h</td>
-            <td>The shutdown command. '/h' means hybernate instead of normal shutdown.</td>
+            <td>The shutdown command. '/h' means hybernate<br/>instead of normal shutdown.</td>
         </tr>
         <tr>
             <td>[General]ShutdownCommand</td>
             <td>shutdown.exe /h</td>
-            <td>The shutdown command. '/h' means hybernate instead of normal shutdown.</td>
+            <td>The shutdown command. '/h' means hybernate<br/>instead of normal shutdown.</td>
         </tr>
         <tr>
             <td>[General]CloseInstance</td>
             <td>True</td>
-            <td>A value indicating whether the browser instance should be quit after the event has been created.</td>
+            <td>A value indicating whether the browser instance should be quit<br/>after the event has been created.</td>
         </tr>
         <tr>
             <td>[General]ShowWorkTimeOnLeftClick</td>
             <td>True</td>
-            <td>A value indicating whether a left click on the icon shows the current work time.</td>
+            <td>A value indicating whether a left click on the icon<br/>shows the current work time.</td>
         </tr>
         <tr>
             <td>[General]Order</td>
@@ -261,8 +265,9 @@ In order to customize what is shown in the right click menu you have to change t
                 The order of the elemnts in the right click menu of the icon.</br>
                 Each element is seperated with '|'. Possible elements:</br>
                 ---,Quit,Arrive,Leave,StartPause,StartPauseAndShutdown,EndPause,</br>
-                ShowWorkTime,LeaveLoggedAndArrive,LeaveAndShutdown,LogLeave,LogLeaveAndShutdown,</br>
-                GetCurrentState,SetDefaultIcon,OpenConfig,OpenReadme
+                ShowWorkTime,LeaveLoggedAndArrive,LeaveAndShutdown,LogLeave,</br>
+                LogLeaveAndShutdown,GetCurrentState,SetDefaultIcon,</br>
+                OpenConfig,OpenReadme
                 </p>
             </td>
         </tr>

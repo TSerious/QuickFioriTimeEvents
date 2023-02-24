@@ -1,7 +1,7 @@
 import logging
 import Config
 import os
-from Fiori import QuickFioriTimeEvents, FioriEvent
+from Fiori import QuickFioriTimeEvents, FioriEvent, Driver
 import DatetimeConverters as dtConvert
 import datetime
 from varname import nameof
@@ -153,30 +153,55 @@ class TrayApplication:
     def check_settings(self):
         logging.debug(sys._getframe().f_code.co_name)
 
-        if not self.check_firefox_binary():
-            messagebox.showinfo("Firefox missing","Couldn't find Firefox.",icon='error')
-            logging.error(Config.General.FirefoxBinaryPath.value + 'is not defined.')
+        browser = self.settings.get(Config.Sections.General, Config.General.Driver)
+
+        if browser != Driver.Edge.value or browser != Driver.Firefox.value:
+            driver = self.define_driver()
+
+            if driver == Driver.NotDefined:
+                messagebox.showinfo("Browser (driver) not defined","You must define a browser for this application.", icon='error')
+                logging.error('No driver defined')
+                quit()
+
+            self.settings.set(Config.Sections.General, Config.General.Driver, driver.value)
+
+        if not self.check_binary_path():
+            messagebox.showinfo(browser + " missing","Couldn't find web browser: " + browser, icon='error')
+            logging.error(Config.General.BinaryPath.value + 'is not defined.')
             quit()
 
-        if not self.check_firefox_profile():
-            logging.warn(Config.General.FirefoxProfilePath.value + 'is not defined.')
+        if not self.check_profile_path():
+            logging.warn(Config.General.ProfilePath.value + 'is not defined.')
 
-            if eval(self._settings.get(Config.Sections.General, Config.General.CheckFirefoxProfilePath)):
+            if eval(self._settings.get(Config.Sections.General, Config.General.CheckProfilePath)):
                 showAgainAnswer = messagebox.askquestion(\
-                    "Firefox profile not defined",\
-                    "No Firefox profile is defined but you might be able to use this application without defining a firefox profile.\nDo you want to see this warning again?",\
+                    browser + " profile not defined",\
+                    "No " + browser + " profile is defined but you might be able to use this application without defining one.\nDo you want to see this warning again?",\
                     icon='warning')
 
                 showAgain = True
                 if showAgainAnswer == messagebox.NO:
                     showAgain = False
 
-                self._settings.set(Config.Sections.General, Config.General.CheckFirefoxProfilePath, str(showAgain))
+                self._settings.set(Config.Sections.General, Config.General.CheckProfilePath, str(showAgain))
 
         if not self.check_fiori_url():
             messagebox.showinfo("Fiori url not defined","The url for fiori isn't configured.",icon='error')
             logging.error(Config.General.Url.value + 'is not defined.')
             quit()
+
+    def define_driver(self) -> Driver:
+        messagebox.showinfo("Select browser","You will now be asked which browser (driver) to use.\nYou must choose either " + Driver.Edge.value + " or " + Driver.Firefox.value + ".")
+
+        answer = messagebox.askyesno("Select browser", "Do you want to use " + Driver.Edge.value + "?")
+        if answer:
+            return Driver.Edge
+        
+        answer = messagebox.askyesno("Select browser", "Do you want to use " + Driver.Firefox.value + "?")
+        if answer:
+            return Driver.Firefox
+        
+        return Driver.NotDefined
 
     def check_fiori_url(self) -> bool:
         logging.debug(sys._getframe().f_code.co_name)
@@ -199,34 +224,42 @@ class TrayApplication:
 
         return False
 
-    def check_firefox_profile(self) -> bool:
+    def check_profile_path(self) -> bool:
         logging.debug(sys._getframe().f_code.co_name)
-        firefoxProfilePath = self.settings.get(Config.Sections.General, Config.General.FirefoxProfilePath)
+        profilePath = self.settings.get(Config.Sections.General, Config.General.ProfilePath)
 
-        if len(firefoxProfilePath) > 0 and os.path.exists(firefoxProfilePath):
+        if len(profilePath) > 0 and os.path.exists(profilePath):
             return True
 
-        firefoxProfilePath = self.search_for_firefox_profile()
+        driverType = self.settings.get(Config.Sections.General, Config.General.Driver)
+        if driverType == Driver.Firefox.value:
+            profilePath = self.search_for_firefox_profile()
+        elif driverType == Driver.Edge.value:
+            profilePath = self.search_for_edge_profile()
 
-        if len(firefoxProfilePath) <= 0 or not os.path.exists(firefoxProfilePath):
+        if len(profilePath) <= 0 or not os.path.exists(profilePath):
             return False
 
-        self.settings.set(Config.Sections.General, Config.General.FirefoxProfilePath, firefoxProfilePath)
+        self.settings.set(Config.Sections.General, Config.General.ProfilePath, profilePath)
         return True
 
-    def check_firefox_binary(self) -> bool:
+    def check_binary_path(self) -> bool:
         logging.debug(sys._getframe().f_code.co_name)
-        firefoxPath = self.settings.get(Config.Sections.General, Config.General.FirefoxBinaryPath)
+        binaryPath = self.settings.get(Config.Sections.General, Config.General.BinaryPath)
 
-        if len(firefoxPath) > 0 and os.path.exists(firefoxPath):
+        if len(binaryPath) > 0 and os.path.exists(binaryPath):
             return True
 
-        firefoxPath = self.search_for_firefox()
+        driverType = self.settings.get(Config.Sections.General, Config.General.Driver)
+        if driverType == Driver.Firefox.value:
+            binaryPath = self.search_for_firefox()
+        elif driverType == Driver.Edge.value:
+            binaryPath = self.search_for_edge()
 
-        if len(firefoxPath) <= 0 or not os.path.exists(firefoxPath):
+        if len(binaryPath) <= 0 or not os.path.exists(binaryPath):
             return False
 
-        self.settings.set(Config.Sections.General, Config.General.FirefoxBinaryPath, firefoxPath)
+        self.settings.set(Config.Sections.General, Config.General.BinaryPath, binaryPath)
         return True
 
     def search_for_firefox(self) -> str:
@@ -238,6 +271,16 @@ class TrayApplication:
         firefoxPath = filedialog.askopenfilename(defaultextension='.exe',filetypes=[("Firefox", "firefox.exe")],initialdir='C:\\Program Files',title='Select firefox.exe')
 
         return firefoxPath
+    
+    def search_for_edge(self) -> str:
+        if os.path.exists(Config.defaultEdgeBinaryPath):
+            return Config.defaultEdgeBinaryPath
+
+        messagebox.showinfo('Edge binary not found', "Couldn't find msedge.exe.\nPlease make sure that Edge is installed.")
+
+        edgePath = filedialog.askopenfilename(defaultextension='.exe',filetypes=[("Edge", "msedge.exe")],initialdir='C:\\Program Files',title='Select msedge.exe')
+
+        return edgePath
 
     def search_for_firefox_profile(self) -> str:
 
@@ -254,7 +297,7 @@ class TrayApplication:
                         profilePath = profile.path
                         profileMaxTime = lastEditTime
 
-        if (len(profilePath) <= 0 or not os.path.exists(profilePath)) and eval(self.settings.get(Config.Sections.General, Config.General.CheckFirefoxProfilePath)):
+        if (len(profilePath) <= 0 or not os.path.exists(profilePath)) and eval(self.settings.get(Config.Sections.General, Config.General.CheckProfilePath)):
             searchForProfileQuestion = messagebox.askquestion('Firefox profile not found', "Couldn't find any firefox profile.\nDo you want to select the profile path now?.")
 
             if searchForProfileQuestion == messagebox.YES:
@@ -270,6 +313,15 @@ class TrayApplication:
                 profilePath = filedialog.askdirectory(initialdir=defaultProfilesPath, title="Select Firefox profile path")
 
         return profilePath
+    
+    def search_for_edge_profile(self) -> str:
+
+        defaultProfilesPath = "C:\\Users\\" + os.getlogin() + "\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default"
+
+        if not os.path.exists(defaultProfilesPath):
+            return ''
+
+        return defaultProfilesPath
     
     def stop_pause(self):
         logging.debug(sys._getframe().f_code.co_name)

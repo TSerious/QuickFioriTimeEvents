@@ -6,6 +6,7 @@ import os
 
 configFileName = 'config.ini'
 defaultFirefoxBinaryPath = 'C:\\Program Files\\Mozilla Firefox\\firefox.exe'
+defaultEdgeBinaryPath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
 
 class Order(Enum):
     Seperator = '|'
@@ -74,9 +75,10 @@ class General(Enum):
     Url = 'Url'
     UrlHome = 'UrlHome'
     UrlTime = 'UrlTime'
-    FirefoxProfilePath = 'FirefoxProfilePath'
-    FirefoxBinaryPath = 'FirefoxBinaryPath'
-    CheckFirefoxProfilePath = 'CheckFirefoxProfilePath'
+    Driver = 'Driver'
+    ProfilePath = 'ProfilePath'
+    BinaryPath = 'BinaryPath'
+    CheckProfilePath = 'CheckProfilePath'
     ArriveEvent = 'ArriveEvent'
     LeaveEvent = 'LeaveEvent'
     PauseStartEvent = 'PauseStartEvent'
@@ -159,9 +161,10 @@ class Settings:
         self.set(Sections.General, General.Url, '', 'The (base) url of Fiori.')
         self.set(Sections.General, General.UrlHome, '#Shell-home', "The path to the 'Home' page.")
         self.set(Sections.General, General.UrlTime, '?appState=lean#TimeEntry-change', "The path to the 'Time' page.")
-        self.set(Sections.General, General.FirefoxProfilePath, '', 'The path where the firefox profile is stored.')
-        self.set(Sections.General, General.FirefoxBinaryPath, '', 'The path where the firefox executable us located.')
-        self.set(Sections.General, General.CheckFirefoxProfilePath, str(True), "A value whether to check if '" + General.FirefoxBinaryPath.value + "' is set.")
+        self.set(Sections.General, General.Driver, '', 'Defines which driver to use. Currently supported are Firefox and Edge')
+        self.set(Sections.General, General.ProfilePath, '', 'The path where the firefox profile is stored.')
+        self.set(Sections.General, General.BinaryPath, '', 'The path where the firefox executable us located.')
+        self.set(Sections.General, General.CheckProfilePath, str(True), "A value whether to check if '" + General.BinaryPath.value + "' is set.")
         self.set(Sections.General, General.ArriveEvent, 'P10', 'The arrive event indentifier.')
         self.set(Sections.General, General.LeaveEvent, 'P20', 'The leave event indentifier.')
         self.set(Sections.General, General.PauseStartEvent, 'P15', 'The pause start event indentifier.')

@@ -46,6 +46,9 @@ def copy_assets_to_output():
     if not os.path.exists(f"{cwd}/output/geckodriver"):
         os.mkdir(f"{cwd}/output/geckodriver")
 
+    if not os.path.exists(f"{cwd}/output/edgedriver"):
+        os.mkdir(f"{cwd}/output/edgedriver")
+
     os.popen(f'copy {cwd}\\{readmeFilename}.pdf {cwd}\\output\\{readmeFilename}.pdf')
 
     icons = os.listdir(f"{cwd}/Icons")
@@ -53,6 +56,7 @@ def copy_assets_to_output():
         os.popen(f'copy {cwd}\\Icons\\{i} {cwd}\\output\\Icons\\{i}')
 
     os.popen(f'copy {cwd}\\geckodriver\\geckodriver.exe {cwd}\\output\\geckodriver\\geckodriver.exe')
+    os.popen(f'copy {cwd}\\edgedriver\\msedgedriver.exe {cwd}\\output\\edgedriver\\msedgedriver.exe')
 
 create_readme_pdf()
 copy_assets_to_output()
