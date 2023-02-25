@@ -41,7 +41,14 @@ class TrayApplication:
 
         if eval(self._settings.get(Config.Sections.General, Config.General.ClearLog)) and os.path.isfile(logFile):
             self.stopLogging()
-            os.remove(logFile)
+            
+            try:
+                os.remove(logFile)
+            except:
+                messagebox.showwarning(
+                    "Already started",
+                    "Another instance of this application might already be running.\r\nPlease close this one or close all other instances.")
+            
             self.startLogging(logFile)
 
         #logging.basicConfig(level=int(self._settings.get(Config.Sections.General, Config.General.MinLogLevel)), force=True)

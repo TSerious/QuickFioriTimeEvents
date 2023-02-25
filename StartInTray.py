@@ -13,7 +13,7 @@ from TrayApplication import TrayApplication
 from TrayApplicationIcon import Icons, set_icon, notify
 import os
 
-version = "1.2"
+version = "1.3"
 
 #######################################
 # Tray methods (for user interaction) #

@@ -1,7 +1,32 @@
+<style>
+    table {
+        font-family: helvetica, sans-serif;
+        font-size: small;
+        border-collapse: collapse;
+    }
+
+    td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+
+    *{
+        font-family: helvetica, sans-serif;
+    }
+
+    code {
+        font-family: "Courier New";
+    }
+</style>
 # QuickFioriTimeEvents
 Windows-Taskbar tool to quickly add time events in SAP Fiori.
 
-My employer uses a SAP Fiori tool to track our time events (working hours). That means that we have to open the appropiate website and clock in and out. Cause I found this relatively annoying I created this small tool for taskbar with which you can quickly clock in and out.
+My employer uses a SAP Fiori tool to track our time events (working hours). That means that we have to open the appropiate website and clock in and out. Cause I found this relatively annoying I created this small tool for the (Windows) taskbar with which you can quickly clock in and out.
 
 The tool is shown as a small icon <img src="/Icons/default.ico" alt="taskbar icon" width="20" height="20"/> in the taskbar. A right click opens a menu that let you perform some actions quickly.
 
@@ -17,9 +42,6 @@ The tool is shown as a small icon <img src="/Icons/default.ico" alt="taskbar ico
 - Log a leave event and shutdown (sleep and hybernate are also possible)
 - Submit logged leave event and arrive afterwards
 - Get the current work time from SAP Fiori
-
-## Disclaimer
-So far this is a Windows only tool. It uses [BeautifulSoup](https://pypi.org/project/beautifulsoup4/) and requires Edge or [Firefox](https://www.mozilla.org/de/firefox/new/) to interact with the Fiori website.
 
 ## Installation
 The tool does not need to be installed just run it.
@@ -104,10 +126,9 @@ The current state is indicated by the taskbar icon. It can be in the following s
 </ul>
 
 ## Configuring the application
-Right now the application can only be configured via the config.ini file. The file in seperated into different sections. In order to change the settings of the application you have to edit the config.ini file. The settings of each section are described in the tables below.
+You can customize what is shown in the right click menu ([see here](#menu-elements)) and other stuff.
 
-### Menu items
-In order to customize what is shown in the right click menu you have to change the settings *[General]Order*.
+Right now the application can only be configured via the config.ini file. The file is seperated into different sections. In order to change the settings of the application you have to edit the config.ini file. The settings of each section are described in the tables below.
 
 ### ArriveLeave
 <table>
@@ -120,7 +141,7 @@ In order to customize what is shown in the right click menu you have to change t
         <tr>
             <td>[ArriveLeave]Approve</td>
             <td>True</td>
-            <td>A value indicating whether the event shall be approved. Only approved events are stored in fiori. Set to False to approve manual.</td>
+            <td>A value indicating whether the event shall be approved. Only approved events are stored in fiori. Set to False to approve manually.</td>
         </tr>
         <tr>
             <td>[ArriveLeave]ArriveOffset</td>
@@ -251,28 +272,42 @@ In order to customize what is shown in the right click menu you have to change t
         <tr>
             <td>[General]Order</td>
             <td>
-                <p>
-                Quit|---</br>
-                |Arrive|Leave|LeaveAndShutdown|---</br>
-                |StartPause|StartPauseAndShutdown|EndPause|---</br>
-                |LeaveLoggedAndArrive|LogLeave|LogLeaveAndShutdown|---</br>
-                |GetCurrentState|SetDefaultIcon|OpenConfig|OpenReadme|---</br>
-                |ShowWorkTime
+                <p style="word-wrap:break-word;width:500px">
+                Quit|---|Arrive|Leave|LeaveAndShutdown|---|StartPause|StartPauseAndShutdown|EndPause|---|LeaveLoggedAndArrive|LogLeave|LogLeaveAndShutdown|---|GetCurrentState|SetDefaultIcon|OpenConfig|OpenReadme|---|ShowWorkTime
                 </p>
             </td>
             <td>
                 <p>
                 The order of the elemnts in the right click menu of the icon.</br>
-                Each element is seperated with '|'. Possible elements:</br>
-                ---,Quit,Arrive,Leave,StartPause,StartPauseAndShutdown,EndPause,</br>
-                ShowWorkTime,LeaveLoggedAndArrive,LeaveAndShutdown,LogLeave,</br>
-                LogLeaveAndShutdown,GetCurrentState,SetDefaultIcon,</br>
-                OpenConfig,OpenReadme
+                Each element is seperated with '|'.<br/>
+                Possible elements are listed in <a href="##menu-elements">Menu Elements</a>.
                 </p>
             </td>
         </tr>
     </tbody>
 </table>
+</div>
+
+#### Menu Elements
+The following elements can be added to *[General]Order* to customize the right click menu.
+<ul>
+<li><code>---</code> A seperator line</li>
+<li><code>Quit</code> <a href="#squit">Quit</a></li>
+<li><code>Arrive</code> <a href="#arrive">Arrive</a></li>
+<li><code>Leave</code> <a href="#leave">Leave</a></li>
+<li><code>StartPause</code> <a href="#start-pause">StartPause</a></li>
+<li><code>StartPauseAndShutdown</code> <a href="#start-pause-and-hybernate">StartPauseAndShutdown</a></li>
+<li><code>EndPause</code> <a href="#end-pause">EndPause</a></li>
+<li><code>ShowWorkTime</code> <a href="#show-work-time">ShowWorkTime</a></li>
+<li><code>LeaveLoggedAndArrive</code> <a href="#arriv-submit-leave">LeaveLoggedAndArrive</a></li>
+<li><code>LeaveAndShutdown</code> <a href="#leave-and-hybernate">LeaveAndShutdown</a></li>
+<li><code>LogLeave</code> <a href="#log-leave">Log Leave</a></li>
+<li><code>LogLeaveAndShutdown</code> <a href="#log-leave-and-hybernate">LogLeaveAndShutdown</a></li>
+<li><code>GetCurrentState</code> <a href="#state">GetCurrentState</a></li>
+<li><code>SetDefaultIcon</code> <a href="#reset-icon">SetDefaultIcon</a></li>
+<li><code>OpenConfig</code> <a href="#open-config-file">OpenConfig</a></li>
+<li><code>OpenReadme</code> <a href="#open-documentation">OpenReadme</a></li>
+</ul>
 
 ### State
 These settings doesn't need to be edited as they are only used to save the state of the application. So they will change on each run.

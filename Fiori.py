@@ -17,6 +17,8 @@ from Config import Settings;
 import Config;
 from enum import Enum
 import DatetimeConverters as dtConvert
+from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 class Driver(Enum):
     Firefox = "Firefox"
@@ -82,6 +84,7 @@ class DriverSettings:
         self._urlHome = urlHome
         self._urlTime = urlTime
         self._type = type
+        self._installedDriver = ""
 
     @property
     def url(self):
@@ -117,10 +120,10 @@ def get_driver(settings: DriverSettings, closeInstance:bool) -> BaseWebDriver:
     driver:BaseWebDriver = None
 
     if settings.type == Driver.Firefox:
-        driver = get_firefox_driver(settings, closeInstance)
+        driver = get_firefox_driver(settings)
     
     if settings.type == Driver.Edge:
-        driver = get_edge_driver(settings, closeInstance)
+        driver = get_edge_driver(settings)
 
     if driver == None:
         raise Exception("Couldn't creat a web driver.")
@@ -136,22 +139,29 @@ def get_driver(settings: DriverSettings, closeInstance:bool) -> BaseWebDriver:
 
     return driver
 
-def get_firefox_driver(settings:DriverSettings, closeInstance:bool) -> BaseWebDriver:
+def get_firefox_driver(settings:DriverSettings) -> BaseWebDriver:
     fp = FirefoxProfile(settings.profile_path)
     binary = FirefoxBinary(settings.binary_path) 
 
-    ffService = FirefoxService('geckodriver\geckodriver.exe')
+    if len(settings._installedDriver) <= 0:
+        settings._installedDriver = GeckoDriverManager().install()
+
+    ffService = FirefoxService(settings._installedDriver)
     ffService.creation_flags = CREATE_NO_WINDOW
     driver:BaseWebDriver = webdriver.Firefox(firefox_binary=binary, firefox_profile=fp, service=ffService)
 
     return driver
 
-def get_edge_driver(settings:DriverSettings, closeInstance:bool) -> BaseWebDriver:
+def get_edge_driver(settings:DriverSettings) -> BaseWebDriver:
     options = edOptions()
     options.headless = False
     options.add_argument('user-data-dir='+settings.profile_path)
     options.binary_location = settings.binary_path
-    edService = EdgeService('edgedriver\msedgedriver.exe')
+
+    if len(settings._installedDriver) <= 0:
+        settings._installedDriver = EdgeChromiumDriverManager().install()
+
+    edService = EdgeService(settings._installedDriver)
     driver:BaseWebDriver = webdriver.Edge(options=options, service=edService)
 
     return driver
