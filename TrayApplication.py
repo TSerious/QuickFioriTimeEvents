@@ -162,7 +162,7 @@ class TrayApplication:
 
         browser = self.settings.get(Config.Sections.General, Config.General.Driver)
 
-        if browser != Driver.Edge.value or browser != Driver.Firefox.value:
+        if browser != Driver.Edge.value and browser != Driver.Firefox.value:
             driver = self.define_driver()
 
             if driver == Driver.NotDefined:
