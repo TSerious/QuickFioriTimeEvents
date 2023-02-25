@@ -1,28 +1,3 @@
-<style>
-    table {
-        font-family: helvetica, sans-serif;
-        font-size: small;
-        border-collapse: collapse;
-    }
-
-    td, th {
-        border: 1px solid #dddddd;
-        text-align: left;
-        padding: 8px;
-    }
-
-    tr:nth-child(even) {
-        background-color: #dddddd;
-    }
-
-    *{
-        font-family: helvetica, sans-serif;
-    }
-
-    code {
-        font-family: "Courier New";
-    }
-</style>
 # QuickFioriTimeEvents
 Windows-Taskbar tool to quickly add time events in SAP Fiori.
 
