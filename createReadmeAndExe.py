@@ -5,6 +5,34 @@ from pyhtml2pdf import converter
 
 readmeFilename = 'README'
 cwd = os.getcwd()
+style = \
+    """
+    <style>
+        table {
+            "font-family: helvetica, sans-serif;"
+            font-size: small;
+            border-collapse: collapse;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+
+        *{
+            font-family: helvetica, sans-serif;
+        }
+
+        code {
+            font-family: "Courier New";
+        }
+    </style>
+    """
 
 def create_readme_pdf():
     with open(f'{readmeFilename}.md', 'r') as f:
@@ -12,12 +40,14 @@ def create_readme_pdf():
 
     cwd = os.getcwd()
     html_text = html_text.replace('src="','src="' + cwd)
+    html_text = style + html_text
 
     with open(f'{readmeFilename}.html', 'w') as f:
         f.write(html_text)
 
     path = os.path.abspath(f'{readmeFilename}.html')
     converter.convert(f'file:///{path}', f'{readmeFilename}.pdf')
+    os.remove(f'{readmeFilename}.html')
 
 def create_exe():
     f = open('auto-py-to-exe_config.json')
