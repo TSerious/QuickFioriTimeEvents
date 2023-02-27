@@ -67,6 +67,8 @@ class State(Enum):
     LastPauseDateTime = 'LastPauseDateTime'
     AccumulatedPauseTime = 'AccumulatedPauseTime'
     LoggedLeaveDateTime = 'LoggedLeaveDateTime'
+    DriverVersion = 'DriverVersion'
+    DriverPath = 'DriverPath'
 
 class General(Enum):
     MinLogLevel = 'MinLogLevel'
@@ -111,7 +113,7 @@ class Settings:
         self.config.optionxform = lambda option: option  # preserve case for letters
 
         if exists(configFileName):
-            logging.debug("Reading existing configuration: " + configFileName)
+            logging.debug(f"Reading existing configuration: {configFileName}")
             self.config.read(configFileName)
         else:
             self.create_default_config()
@@ -129,7 +131,7 @@ class Settings:
         try:
             return self.config.get(section.value, option.value)
         except:
-            logging.error("Couldn't get " + option.value)
+            logging.error(f"Couldn't get {option.value}")
             return ''
 
     def set(self, section:Sections, option:General|ArriveLeave|State, value, comment:str|None = None):
@@ -140,7 +142,7 @@ class Settings:
         #    optionName = "# " + comment + "\n" + optionName
 
         self.config.set(section.value, optionName, value)
-        logging.debug("Setting [" + section.value + "] " + optionName + " to " + value)
+        logging.debug(f"Setting [{section.value}] {optionName} to {value}")
         self.save()
 
     def create_default_config(self):
@@ -164,7 +166,7 @@ class Settings:
         self.set(Sections.General, General.Driver, '', 'Defines which driver to use. Currently supported are Firefox and Edge')
         self.set(Sections.General, General.ProfilePath, '', 'The path where the firefox profile is stored.')
         self.set(Sections.General, General.BinaryPath, '', 'The path where the firefox executable us located.')
-        self.set(Sections.General, General.CheckProfilePath, str(True), "A value whether to check if '" + General.BinaryPath.value + "' is set.")
+        self.set(Sections.General, General.CheckProfilePath, str(True), f"A value whether to check if '{General.BinaryPath.value}' is set.")
         self.set(Sections.General, General.ArriveEvent, 'P10', 'The arrive event indentifier.')
         self.set(Sections.General, General.LeaveEvent, 'P20', 'The leave event indentifier.')
         self.set(Sections.General, General.PauseStartEvent, 'P15', 'The pause start event indentifier.')

@@ -21,7 +21,7 @@ def set_icon(trayIcon:pystray.Icon, i:Icons):
 
     image = Image.open(i.value)
     trayIcon.icon = image
-    logging.debug("Icon set to " + str(i.value))
+    logging.debug(f"Icon set to {str(i.value)}")
 
 def notify(trayIcon:pystray.Icon, msg:str):
     logging.debug(sys._getframe().f_code.co_name)

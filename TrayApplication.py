@@ -78,7 +78,7 @@ class TrayApplication:
     def last_arrive_datetime(self, value:datetime.datetime):
         self._lastArriveDateTime = value
         v = dtConvert.to_string(self._lastArriveDateTime)
-        logging.debug('Setting ' + nameof(self._lastArriveDateTime) + ' to: ' + v)
+        logging.debug(f'Setting {nameof(self._lastArriveDateTime)} to: {v}')
         self._settings.set(Config.Sections.State, Config.State.LastArriveDateTime, v)
 
     @property
@@ -89,7 +89,7 @@ class TrayApplication:
     def last_leave_datetime(self, value:datetime.datetime):
         self._lastLeaveDateTime = value
         v = dtConvert.to_string(self._lastLeaveDateTime)
-        logging.debug('Setting ' + nameof(self._lastLeaveDateTime) + ' to: ' + v)
+        logging.debug(f'Setting {nameof(self._lastLeaveDateTime)} to: {v}')
         self._settings.set(Config.Sections.State, Config.State.LastLeaveDateTime, v)
 
     @property
@@ -104,7 +104,7 @@ class TrayApplication:
     def is_paused(self, value:bool):
         self._isPaused = value
         v = str(value)
-        logging.debug('Setting ' + nameof(self._isPaused) + ' to: ' + v)
+        logging.debug(f'Setting {nameof(self._isPaused)} to: {v}')
         self._settings.set(Config.Sections.State, Config.State.IsPause, v)
 
     @property
@@ -115,7 +115,7 @@ class TrayApplication:
     def pause_start_datetime(self, value:datetime.datetime):
         self._pauseStartTime = value
         pauseStartTime = dtConvert.to_string(self._pauseStartTime)
-        logging.debug('Setting ' + nameof(self._pauseStartTime) + ' to: ' + pauseStartTime)
+        logging.debug(f'Setting {nameof(self._pauseStartTime)} to: {pauseStartTime}')
         self._settings.set(Config.Sections.State, Config.State.LastPauseDateTime, pauseStartTime)
 
     @property
@@ -126,7 +126,7 @@ class TrayApplication:
     def pause_accumulated_datetime(self, value:datetime.timedelta):
         self._pauseAccumulatedTime = value
         v = str(value.total_seconds())
-        logging.debug('Setting ' + nameof(self._pauseAccumulatedTime) + ' to: ' + v)
+        logging.debug(f'Setting {nameof(self._pauseAccumulatedTime)} to: {v}')
         self._settings.set(Config.Sections.State, Config.State.AccumulatedPauseTime, v)
 
     @property
@@ -137,7 +137,7 @@ class TrayApplication:
     def logged_leave_datetime(self, value:datetime.datetime):
         self._loggedLeaveDatetime = value
         v = dtConvert.to_string(self._loggedLeaveDatetime)
-        logging.debug('Setting ' + nameof(self._loggedLeaveDatetime) + ' to: ' + v)
+        logging.debug(f'Setting {nameof(self._loggedLeaveDatetime)} to: {v}')
         self._settings.set(Config.Sections.State, Config.State.LoggedLeaveDateTime, v)
 
     def ping(self):
@@ -151,11 +151,10 @@ class TrayApplication:
         if (value == Config.Order.StartPauseAndShutdown):
             command = Config.General.PauseStartCommand
 
-        name = value.value
         if self._settings.get(Config.Sections.General, command).endswith("h"):
-            return name + "hybernate"
+            return f"{value.value}hybernate"
 
-        return name + "shutdown"
+        return f"{value.value}shutdown"
 
     def check_settings(self):
         logging.debug(sys._getframe().f_code.co_name)
@@ -163,6 +162,11 @@ class TrayApplication:
         browser = self.settings.get(Config.Sections.General, Config.General.Driver)
 
         if browser != Driver.Edge.value and browser != Driver.Firefox.value:
+            self.settings.set(Config.Sections.General, Config.General.BinaryPath, '')
+            self.settings.set(Config.Sections.General, Config.General.ProfilePath, '')
+            self.settings.set(Config.Sections.State, Config.State.DriverVersion, '')
+            self.settings.set(Config.Sections.State, Config.State.DriverPath, '')
+
             driver = self.define_driver()
 
             if driver == Driver.NotDefined:
@@ -173,17 +177,17 @@ class TrayApplication:
             self.settings.set(Config.Sections.General, Config.General.Driver, driver.value)
 
         if not self.check_binary_path():
-            messagebox.showinfo(browser + " missing","Couldn't find web browser: " + browser, icon='error')
-            logging.error(Config.General.BinaryPath.value + 'is not defined.')
+            messagebox.showinfo(f"{browser} missing", f"Couldn't find web browser: {browser}", icon='error')
+            logging.error(f'{Config.General.BinaryPath.value} is not defined.')
             quit()
 
         if not self.check_profile_path():
-            logging.warn(Config.General.ProfilePath.value + 'is not defined.')
+            logging.warn(f'{Config.General.ProfilePath.value} is not defined.')
 
             if eval(self._settings.get(Config.Sections.General, Config.General.CheckProfilePath)):
                 showAgainAnswer = messagebox.askquestion(\
-                    browser + " profile not defined",\
-                    "No " + browser + " profile is defined but you might be able to use this application without defining one.\nDo you want to see this warning again?",\
+                    f"{browser} profile not defined",\
+                    f"No {browser} profile is defined but you might be able to use this application without defining one.\nDo you want to see this warning again?",\
                     icon='warning')
 
                 showAgain = True
@@ -193,18 +197,18 @@ class TrayApplication:
                 self._settings.set(Config.Sections.General, Config.General.CheckProfilePath, str(showAgain))
 
         if not self.check_fiori_url():
-            messagebox.showinfo("Fiori url not defined","The url for fiori isn't configured.",icon='error')
-            logging.error(Config.General.Url.value + 'is not defined.')
+            messagebox.showinfo("Fiori url not defined", "The url for fiori isn't configured.",icon='error')
+            logging.error(f'{Config.General.Url.value} is not defined.')
             quit()
 
     def define_driver(self) -> Driver:
-        messagebox.showinfo("Select browser","You will now be asked which browser (driver) to use.\nYou must choose either " + Driver.Edge.value + " or " + Driver.Firefox.value + ".")
+        messagebox.showinfo("Select browser", f"You will now be asked which browser (driver) to use.\nYou must choose either {Driver.Edge.value} or {Driver.Firefox.value}.")
 
-        answer = messagebox.askyesno("Select browser", "Do you want to use " + Driver.Edge.value + "?")
+        answer = messagebox.askyesno("Select browser", f"Do you want to use {Driver.Edge.value}?")
         if answer:
             return Driver.Edge
         
-        answer = messagebox.askyesno("Select browser", "Do you want to use " + Driver.Firefox.value + "?")
+        answer = messagebox.askyesno("Select browser", f"Do you want to use {Driver.Firefox.value}?")
         if answer:
             return Driver.Firefox
         
@@ -219,7 +223,7 @@ class TrayApplication:
 
         fioriUrl = simpledialog.askstring( \
             "Define Fiori url",\
-            "You need to define the url (address) of Fiori.\n" + "Please open a browser, go to your Fiori website and copy the url to here:")
+            "You need to define the url (address) of Fiori.\nPlease open a browser, go to your Fiori website and copy the url to here:")
 
         if fioriUrl == None:
             return False
@@ -362,7 +366,7 @@ class TrayApplication:
             self.last_arrive_datetime.day == datetime.datetime.now().day and \
             self.last_arrive_datetime.month == datetime.datetime.now().month
 
-        logging.debug(sys._getframe().f_code.co_name + ' = ' + str(b))
+        logging.debug(f'{sys._getframe().f_code.co_name} = {str(b)}')
 
         return b
     
@@ -374,7 +378,7 @@ class TrayApplication:
         if closeInstance == None:
             closeInstance = eval(self.settings.get(Config.Sections.General, Config.General.CloseInstance))
 
-        logging.debug("Set: " + str(event) + " at " + dtConvert.to_string(eventTime) +  " | approve = " + str(approve) + " | closeInstance = " + str(closeInstance))
+        logging.debug(f"Set: {str(event)} at {dtConvert.to_string(eventTime)} | approve = {str(approve)} | closeInstance = {str(closeInstance)}")
 
         done:bool = self.automatefiori.set_event(
             event,
@@ -382,7 +386,7 @@ class TrayApplication:
             approve,
             closeInstance)
 
-        logging.debug("Set succeeded = " + str(done))
+        logging.debug(f"Set succeeded = {str(done)}")
 
         return done
 
@@ -392,11 +396,11 @@ class TrayApplication:
         done, msg = self.set(FioriEvent.Leave, leaveDateTime, approve, closeInstance)
 
         if not done:
-            logging.error("Couldn't set leave at " + dtConvert.to_string(leaveDateTime) + " | approve = " + str(approve) + " | " + msg)
+            logging.error(f"Couldn't set leave at {dtConvert.to_string(leaveDateTime)} | approve = {str(approve)} | {msg}")
             set_icon(self._trayIcon, Icons.Error)
-            notify(self._trayIcon, "Couldn't set leave.\n" + msg)
+            notify(self._trayIcon, f"Couldn't set leave.\n{msg}")
         else:
-            logging.info("Set leave at " + dtConvert.to_string(leaveDateTime) + " | approve = " + str(approve))
+            logging.info(f"Set leave at {dtConvert.to_string(leaveDateTime)} | approve = {str(approve)}")
             set_icon(self._trayIcon, Icons.ClockedOut)
 
         self.clear_pause()
@@ -410,11 +414,11 @@ class TrayApplication:
         done, msg = self.set(FioriEvent.Arrive, arriveDateTime, approve, closeInstance)
 
         if not done:
-            logging.error("Couldn't set arrive at " + dtConvert.to_string(arriveDateTime) + " | approve = " + str(approve) + " | " + msg)
+            logging.error(f"Couldn't set arrive at {dtConvert.to_string(arriveDateTime)} | approve = {str(approve)} | {msg}")
             set_icon(self._trayIcon, Icons.Error)
-            notify(self._trayIcon, "Couldn't set arrive now.\n" + msg)
+            notify(self._trayIcon, f"Couldn't set arrive now.\n{msg}")
         else:
-            logging.info("Set arrive at " + dtConvert.to_string(arriveDateTime) + " | approve = " + str(approve))
+            logging.info(f"Set arrive at {dtConvert.to_string(arriveDateTime)} | approve = {str(approve)}")
             set_icon(self._trayIcon, Icons.ClockedIn)
 
         self.clear_pause()
@@ -430,12 +434,12 @@ class TrayApplication:
             event = FioriEvent.PauseStart
 
         if start and self.is_paused:
-            if not messagebox.askyesno("Start pause?","You already started the pause.\nDo you want to start it again?"):
+            if not messagebox.askyesno("Start pause?", "You already started the pause.\nDo you want to start it again?"):
                 return
 
             logging.info("Starting pause but pause is already started")        
         elif not start and not self.is_paused:
-            if not messagebox.askyesno("End pause?","You already ended the pause.\nDo you want to end it again?"):
+            if not messagebox.askyesno("End pause?", "You already ended the pause.\nDo you want to end it again?"):
                 return
 
             logging.info("Ending pause but has already ended")
@@ -443,15 +447,15 @@ class TrayApplication:
         done, msg = self.set(event, pauseTime, approve, closeInstance)
 
         if not done:
-            logging.error("Couldn't setPause: start = " + str(start) + " | approve = " + str(approve) + " | " + msg)
+            logging.error(f"Couldn't setPause: start = {str(start)} | approve ={str(approve)} | {msg}")
             set_icon(self.trayIcon, Icons.Error)
 
             if start:
-                notify(self.trayIcon, "Couldn't start pause.\n" + msg)
+                notify(self.trayIcon, f"Couldn't start pause.\n{msg}")
             else:
-                notify(self.trayIcon, "Couldn't stop pause.\n" + msg)
+                notify(self.trayIcon, f"Couldn't stop pause.\n{msg}")
         else:
-            logging.info("Set pause at " + dtConvert.to_string(pauseTime) + " | start = " + str(start) + " | approve = " + str(approve))
+            logging.info(f"Set pause at {dtConvert.to_string(pauseTime)} | start = {str(start)} | approve = {str(approve)}")
             if start:
                 set_icon(self.trayIcon, Icons.Paused)
             else:
@@ -473,7 +477,7 @@ class TrayApplication:
             notify(self.trayIcon, "Shutdown command is invalid.")
             return
 
-        logging.info("Shutting down system now with: " + commandString)
+        logging.info(f"Shutting down system now with: {commandString}")
         os.system(commandString)
 
     def get_current_state(self, closeInstance:bool|None = None):
@@ -485,7 +489,7 @@ class TrayApplication:
         done, msg, state = self.automatefiori.get_state(closeInstance)
         
         if len(msg) > 0:
-            logging.error("Couldn't get current state: " + msg)
+            logging.error(f"Couldn't get current state: {msg}")
 
         return done, state
     

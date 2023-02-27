@@ -1,3 +1,4 @@
+import logging
 from bs4 import BeautifulSoup
 import datetime
 from selenium.webdriver.remote.webdriver import BaseWebDriver
@@ -17,8 +18,10 @@ from Config import Settings;
 import Config;
 from enum import Enum
 import DatetimeConverters as dtConvert
-from webdriver_manager.firefox import GeckoDriverManager
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from webdrivermanager import GeckoDriverManager
+from webdrivermanager import EdgeChromiumDriverManager
+import os
+from win32api import GetFileVersionInfo, HIWORD, LOWORD
 
 class Driver(Enum):
     Firefox = "Firefox"
@@ -77,14 +80,23 @@ class FioriState:
     PauseStartTime:datetime = None
 
 class DriverSettings:
-    def __init__(self, type:Driver, profilePath:str, binaryPath:str, url:str, urlHome:str, urlTime:str):
-        self._frefoxProfilePath = profilePath
-        self._firefoxBinaryPath = binaryPath
+    def __init__(self, type:Driver, profilePath:str, binaryPath:str, url:str, urlHome:str, urlTime:str, driverVersion:str, driverPath:str):
+        self._profilePath = profilePath
+        self._binaryPath = binaryPath
         self._url = url
         self._urlHome = urlHome
         self._urlTime = urlTime
         self._type = type
-        self._installedDriver = ""
+        self._driverVersion = driverVersion
+        self._driverPath = driverPath
+
+        if type == Driver.Firefox:
+            self._driverManager = GeckoDriverManager()
+        elif type == Driver.Edge:
+            self._driverManager = EdgeChromiumDriverManager()
+            self._driverManager.edgechromium_driver_base_url = "https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver?maxresults=2000&comp=list&timeout=60000&startAt=10000"
+        else:
+            self._driverManager = None
 
     @property
     def url(self):
@@ -99,11 +111,11 @@ class DriverSettings:
 
     @property
     def profile_path(self):
-        return self._frefoxProfilePath
+        return self._profilePath
 
     @property
     def binary_path(self):
-        return self._firefoxBinaryPath
+        return self._binaryPath
     
     @property
     def type(self):
@@ -115,21 +127,21 @@ class DriverSettings:
     def get_url_time(self):
         return self.url + self.url_time
     
-def get_driver(settings: DriverSettings, closeInstance:bool) -> BaseWebDriver:
+def get_driver(driverSettings: DriverSettings, settings:Settings, closeInstance:bool) -> BaseWebDriver:
 
     driver:BaseWebDriver = None
 
-    if settings.type == Driver.Firefox:
-        driver = get_firefox_driver(settings)
+    if driverSettings.type == Driver.Firefox:
+        driver = get_firefox_driver(driverSettings, settings)
     
-    if settings.type == Driver.Edge:
-        driver = get_edge_driver(settings)
+    if driverSettings.type == Driver.Edge:
+        driver = get_edge_driver(driverSettings, settings)
 
     if driver == None:
         raise Exception("Couldn't creat a web driver.")
 
     driver.minimize_window()
-    driver.get(settings.get_url_home())
+    driver.get(driverSettings.get_url_home())
 
     if (driver.title.startswith('Sign in to your account')):
         if closeInstance:
@@ -139,29 +151,69 @@ def get_driver(settings: DriverSettings, closeInstance:bool) -> BaseWebDriver:
 
     return driver
 
-def get_firefox_driver(settings:DriverSettings) -> BaseWebDriver:
-    fp = FirefoxProfile(settings.profile_path)
-    binary = FirefoxBinary(settings.binary_path) 
+def get_version_number(file_path):
+  
+    file_information = GetFileVersionInfo(file_path, "\\")
+  
+    ms_file_version = file_information['FileVersionMS']
+    ls_file_version = file_information['FileVersionLS']
+  
+    versionInfo = [str(HIWORD(ms_file_version)), str(LOWORD(ms_file_version)),str(HIWORD(ls_file_version)), str(LOWORD(ls_file_version))]
 
-    if len(settings._installedDriver) <= 0:
-        settings._installedDriver = GeckoDriverManager().install()
+    version = ".".join(versionInfo)
 
-    ffService = FirefoxService(settings._installedDriver)
+    return version
+
+def update_driver(driverSettings:DriverSettings, settings:Settings, useLatest:bool):
+
+    if driverSettings._driverManager == None:
+        raise Exception("No web driver manager available.")
+
+    latestVersion = driverSettings._driverManager.get_latest_version()
+
+    logging.debug(f"Latest version of web driver is {latestVersion}.")
+
+    installedVersion = get_version_number(driverSettings._binaryPath)
+
+    version = installedVersion
+    if useLatest:
+        version = latestVersion
+
+    if version != driverSettings._driverVersion or not os.path.exists(driverSettings._driverPath):
+        logging.debug("Downloading and installing new version of web driver.")
+
+        path = driverSettings._driverManager.download_and_install(version=version)
+        driverSettings._driverPath = path[1]._str
+        driverSettings._driverVersion = version
+
+        settings.set(Config.Sections.State, Config.State.DriverVersion, version)
+        settings.set(Config.Sections.State, Config.State.DriverPath, driverSettings._driverPath)
+
+def get_firefox_driver(driverSettings:DriverSettings, settings:Settings) -> BaseWebDriver:
+
+    update_driver(driverSettings, settings, True)
+
+    fp = FirefoxProfile(driverSettings.profile_path)
+    binary = FirefoxBinary(driverSettings.binary_path) 
+
+    ffService = FirefoxService(driverSettings._driverPath)
     ffService.creation_flags = CREATE_NO_WINDOW
     driver:BaseWebDriver = webdriver.Firefox(firefox_binary=binary, firefox_profile=fp, service=ffService)
 
     return driver
 
-def get_edge_driver(settings:DriverSettings) -> BaseWebDriver:
+def get_edge_driver(driverSettings:DriverSettings, settings:Settings) -> BaseWebDriver:
+
+    update_driver(driverSettings, settings, False)
+
     options = edOptions()
     options.headless = False
-    options.add_argument('user-data-dir='+settings.profile_path)
-    options.binary_location = settings.binary_path
+    options.add_argument(f'user-data-dir={driverSettings.profile_path}')
+    options.binary_location = driverSettings.binary_path
 
-    if len(settings._installedDriver) <= 0:
-        settings._installedDriver = EdgeChromiumDriverManager().install()
-
-    edService = EdgeService(settings._installedDriver)
+    edService = EdgeService(driverSettings._driverPath)
+    edService.creation_flags = CREATE_NO_WINDOW
+    
     driver:BaseWebDriver = webdriver.Edge(options=options, service=edService)
 
     return driver
@@ -177,14 +229,14 @@ def get_element(driver:BaseWebDriver, by:By, value:str):
     try:
         element = driver.find_element(By.ID, 'serviceErrorMessageBox')
     except Exception as e:
-        print("Exception catched when trying to get element: " + str(by) + ":" + str(value) + " | " + str(e))
+        print(f"Exception catched when trying to get element: {str(by)}:{str(value)} | {str(e)}")
         element = None
 
     return element
 
 def click(driver:BaseWebDriver, by: By, value: str, retryTries:int = 20) -> bool:
     
-    print("Trying to click " + value)
+    print(f"Trying to click {value}")
     clickCount: int = 0
     clicked = False
     while(clickCount < retryTries):
@@ -194,7 +246,7 @@ def click(driver:BaseWebDriver, by: By, value: str, retryTries:int = 20) -> bool
             element = wait_and_get_element(driver, by, value)
             element.click()
         except Exception:
-            print("Exception catched while trying to click " + value + " (" + str(clickCount) + "/20)")
+            print(f"Exception catched while trying to click {value} ({str(clickCount)}/{retryTries})")
             time.sleep(1)
             catched = True
 
@@ -204,7 +256,7 @@ def click(driver:BaseWebDriver, by: By, value: str, retryTries:int = 20) -> bool
             clickCount = 20
             clicked = True 
 
-    print("Trying to click " + value + " succueeded: " + str(clicked))
+    print(f"Trying to click {value} succueeded: {str(clicked)}")
     return clicked
 
 def select_event_type(driver:BaseWebDriver, eventType:str) -> bool:
@@ -247,7 +299,7 @@ def get_logged_events(driver:BaseWebDriver):
             i += 4
             continue
         
-        eventTime = dtConvert.to_datetime(events[i+1] + " " + events[i+2],dtConvert.Formats.DMY_H_M_S)
+        eventTime = dtConvert.to_datetime(f"{events[i+1]} {events[i+2]}", dtConvert.Formats.DMY_H_M_S)
         listOfEvents.append({"event":event,"datetime":eventTime})
         i += 4
 
@@ -267,7 +319,7 @@ def get_first_event_index(events) -> int:
     return firstEvent
 
 def get_has_event_and_time(events, event:FioriEvent):
-    print("Getting has event " + str(event))
+    print(f"Getting has event {str(event)}")
 
     if len(events) <= 0:
         return False, None
@@ -375,6 +427,7 @@ class QuickFioriTimeEvents:
         self.PauseStartEvent = settings.get(Config.Sections.General, Config.General.PauseStartEvent)
         self.PauseEndEvent = settings.get(Config.Sections.General, Config.General.PauseEndEvent)
         self.WaitTimeAfterPageLoad = int(settings.get(Config.Sections.General, Config.General.WaitTimeAfterPageLoad))
+        self.settings = settings
 
         driverType = Driver.Firefox
         setDriverType = settings.get(Config.Sections.General, Config.General.Driver)
@@ -390,6 +443,8 @@ class QuickFioriTimeEvents:
             settings.get(Config.Sections.General, Config.General.Url),
             settings.get(Config.Sections.General, Config.General.UrlHome),
             settings.get(Config.Sections.General, Config.General.UrlTime),
+            settings.get(Config.Sections.State, Config.State.DriverVersion),
+            settings.get(Config.Sections.State, Config.State.DriverPath)
         )
 
     def set_event(self, type: FioriEvent, setDateTime: datetime, approve: bool, closeInstance:bool):    
@@ -402,10 +457,10 @@ class QuickFioriTimeEvents:
         msg:str = ''      
 
         try:
-            driver = get_driver(self.driverSettings, closeInstance)
+            driver = get_driver(self.driverSettings, self.settings, closeInstance)
 
             if driver == None:
-                raise Exception("Couldn't go to website: " + self.driverSettings.get_url_home())
+                raise Exception(f"Couldn't go to website: {self.driverSettings.get_url_home()}")
                 
             driver.get(self.driverSettings.get_url_time())
             time.sleep(self.WaitTimeAfterPageLoad)
@@ -416,19 +471,19 @@ class QuickFioriTimeEvents:
             time.sleep(1)
 
             if type == FioriEvent.Arrive and not select_event_type(driver, self.ArriveEvent):
-                raise Exception("Couldn't select " + self.ArriveEvent + " event.")
+                raise Exception(f"Couldn't select {self.ArriveEvent} event.")
             elif type == FioriEvent.Leave and not select_event_type(driver, self.LeaveEvent):
-                raise Exception("Couldn't select " + self.LeaveEvent + " event.")
+                raise Exception(f"Couldn't select {self.LeaveEvent} event.")
             elif type == FioriEvent.PauseStart and not select_event_type(driver, self.PauseStartEvent):
-                raise Exception("Couldn't select " + self.PauseStartEvent + " event.")
+                raise Exception(f"Couldn't select {self.PauseStartEven} event.")
             elif type == FioriEvent.PauseEnd and not select_event_type(driver, self.PauseEndEvent):
-                raise Exception("Couldn't select " + self.PauseEndEvent + " event.")
+                raise Exception(f"Couldn't select {self.PauseEndEvent} event.")
 
             if not set_time(driver, setDateTime):
-                raise Exception("Couldn't set time to " + dtConvert.to_string(setDateTime, dtConvert.Formats.H_M_S) + ".")
+                raise Exception(f"Couldn't set time to {dtConvert.to_string(setDateTime, dtConvert.Formats.H_M_S)}.")
 
             if not set_date(driver, setDateTime):
-                raise Exception("Couldn't set date to " + dtConvert.to_string(setDateTime, dtConvert.Formats.d_m_y) + ".")
+                raise Exception(f"Couldn't set date to {dtConvert.to_string(setDateTime, dtConvert.Formats.d_m_y)}.")
 
             if not click(driver, By.ID,'__xmlview0--save-BDI-content'):
                 raise Exception("Couldn't click 'Save'.")
@@ -465,10 +520,10 @@ class QuickFioriTimeEvents:
         state:FioriState = None
         driver:BaseWebDriver = None
         try:
-            driver = get_driver(self.driverSettings, closeInstance)
+            driver = get_driver(self.driverSettings, self.settings, closeInstance)
 
             if driver == None:
-                raise Exception("Couldn't go to website: " + self.driverSettings.get_url_home())
+                raise Exception(f"Couldn't go to website: {self.driverSettings.get_url_home()}")
                 
             driver.get(self.driverSettings.get_url_time())
             time.sleep(self.WaitTimeAfterPageLoad)

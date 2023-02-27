@@ -13,8 +13,6 @@ from TrayApplication import TrayApplication
 from TrayApplicationIcon import Icons, set_icon, notify
 import os
 
-version = "1.3"
-
 #######################################
 # Tray methods (for user interaction) #
 #######################################
@@ -36,11 +34,11 @@ def tray_show_work_time(icon, item):
 
     hereTime = datetime.datetime.now() - app.last_arrive_datetime
 
-    msg:str = "You are here since: " + dtConvert.timedelta_to_string(hereTime)
+    msg:str = f"You are here since: {dtConvert.timedelta_to_string(hereTime)}"
 
     if app.pause_accumulated_datetime != None and app.pause_accumulated_datetime.total_seconds() > 0:
         workTime = datetime.datetime.now() - app.last_arrive_datetime - app.pause_accumulated_datetime
-        msg = msg + "\nWorked for: " + dtConvert.timedelta_to_string(workTime)
+        msg = f"{msg}\nWorked for: {dtConvert.timedelta_to_string(workTime)}"
 
     messagebox.showinfo('Working', msg)
 
@@ -49,7 +47,7 @@ def tray_arrive(icon, item):
     arriveTime:datetime = datetime.datetime.now() + datetime.timedelta(minutes=int(app.settings.get(Config.Sections.ArriveLeave, Config.ArriveLeave.ArriveOffset)))
     app.logged_leave_datetime = None
 
-    if app.already_logged_in_today() and not messagebox.askyesno("Arrive again?","You already ckocked in.\nDo you want to clock in again?"):
+    if app.already_logged_in_today() and not messagebox.askyesno("Arrive again?", "You already ckocked in.\nDo you want to clock in again?"):
         logging.info("Can't arrive, cause already arrived today.")
         return
 
@@ -59,7 +57,7 @@ def tray_arrive(icon, item):
 def tray_leave(icon, item):
     logging.debug(sys._getframe().f_code.co_name)
 
-    if not app.already_logged_in_today() and not messagebox.askyesno("Leave again?","You already clocked out.\nDo you want to clock out again?"):
+    if not app.already_logged_in_today() and not messagebox.askyesno("Leave again?", "You already clocked out.\nDo you want to clock out again?"):
         logging.info("Can't leave: Not logged in today.")
         return
 
@@ -69,21 +67,21 @@ def tray_leave(icon, item):
 
 def tray_pause_start(icon, item):
     logging.debug(sys._getframe().f_code.co_name)
-    pauseTime = datetime.datetime.now() + + datetime.timedelta(minutes=int(app.settings.get(Config.Sections.ArriveLeave, Config.ArriveLeave.StartPauseOffset)))
+    pauseTime = datetime.datetime.now() + datetime.timedelta(minutes=int(app.settings.get(Config.Sections.ArriveLeave, Config.ArriveLeave.StartPauseOffset)))
     app.set_pause(True, pauseTime)
     app.ping()
 
 def tray_pause_start_and_shutdown(icon, item):
     logging.debug(sys._getframe().f_code.co_name)
     logging.debug(sys._getframe().f_code.co_name)
-    pauseTime = datetime.datetime.now() + + datetime.timedelta(minutes=int(app.settings.get(Config.Sections.ArriveLeave, Config.ArriveLeave.StartPauseOffset)))
+    pauseTime = datetime.datetime.now() + datetime.timedelta(minutes=int(app.settings.get(Config.Sections.ArriveLeave, Config.ArriveLeave.StartPauseOffset)))
     app.set_pause(True, pauseTime)
     app.ping()
     app.execute_shutdown_command(Config.General.PauseStartCommand)
 
 def tray_pause_end(icon, item):
     logging.debug(sys._getframe().f_code.co_name)
-    pauseTime = datetime.datetime.now() + + datetime.timedelta(minutes=int(app.settings.get(Config.Sections.ArriveLeave, Config.ArriveLeave.EndPauseOffset)))
+    pauseTime = datetime.datetime.now() + datetime.timedelta(minutes=int(app.settings.get(Config.Sections.ArriveLeave, Config.ArriveLeave.EndPauseOffset)))
     app.set_pause(False, pauseTime)
     app.ping()
 
@@ -108,13 +106,13 @@ def tray_leave_logged_and_arrive(icon, item):
     logging.debug(sys._getframe().f_code.co_name)
 
     if app.logged_leave_datetime == None or app.logged_leave_datetime == datetime.datetime.min:
-        logging.info("No leave date logged. " + Config.State.LoggedLeaveDateTime.value + " isn't set.")
+        logging.info(f"No leave date logged. {Config.State.LoggedLeaveDateTime.value} isn't set.")
         set_icon(app.trayIcon, Icons.Default)
         notify(app.trayIcon, "No leave date logged.")
         return
 
     if not app.set_leave(app.logged_leave_datetime):
-        msg = "Couldn't leave at logged time (" + dtConvert.to_string(app.logged_leave_datetime) + "). And will therefore not arrive."
+        msg = f"Couldn't leave at logged time ({dtConvert.to_string(app.logged_leave_datetime)}). And will therefore not arrive."
         logging.error(msg)
         set_icon(app.trayIcon, Icons.Error)
         notify(app.trayIcon, msg)
@@ -127,7 +125,7 @@ def tray_leave_logged_and_arrive(icon, item):
         return
 
     if not app.set_arrive(arriveTime):
-        msg = "Couldn't arrive at " + dtConvert.to_string(arriveTime) + " after setting logged leave time (" + dtConvert.to_string(app.logged_leave_datetime) + ")."
+        msg = f"Couldn't arrive at {dtConvert.to_string(arriveTime)} after setting logged leave time ({dtConvert.to_string(app.logged_leave_datetime)})."
         logging.error(msg)
         set_icon(app.trayIcon, Icons.Error)
         notify(app.trayIcon, msg)
