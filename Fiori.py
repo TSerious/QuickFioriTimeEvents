@@ -1,4 +1,5 @@
 import logging
+import shutil
 from bs4 import BeautifulSoup
 import datetime
 from selenium.webdriver.remote.webdriver import BaseWebDriver
@@ -182,12 +183,29 @@ def update_driver(driverSettings:DriverSettings, settings:Settings, useLatest:bo
     if version != driverSettings._driverVersion or not os.path.exists(driverSettings._driverPath):
         logging.debug("Downloading and installing new version of web driver.")
 
-        path = driverSettings._driverManager.download_and_install(version=version)
+        path = download_driver(driverSettings, version)
         driverSettings._driverPath = path[1]._str
         driverSettings._driverVersion = version
 
         settings.set(Config.Sections.State, Config.State.DriverVersion, version)
         settings.set(Config.Sections.State, Config.State.DriverPath, driverSettings._driverPath)
+
+def download_driver(driverSettings:DriverSettings, version:str = ''):
+    if (len(version) <= 0):
+        version = "latest"
+
+    path:str = ''
+    try:
+        path = driverSettings._driverManager.download_and_install(version=version)
+    except:
+        path = os.path.dirname(driverSettings._driverPath)
+        path = os.path.abspath(path + "\\..")
+        shutil.rmtree(path)
+        os.mkdir(path)
+        os.mkdir(path + "\\bin")
+        path = driverSettings._driverManager.download_and_install(version=version)
+
+    return path    
 
 def get_firefox_driver(driverSettings:DriverSettings, settings:Settings) -> BaseWebDriver:
 

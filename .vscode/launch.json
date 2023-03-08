@@ -11,6 +11,14 @@
             "program": "${file}",
             "console": "internalConsole",
             "justMyCode": false
+        },
+        {
+            "name": "Python: StartInTray",
+            "type": "python",
+            "request": "launch",
+            "program": "StartInTray.py",
+            "console": "internalConsole",
+            "justMyCode": false
         }
     ]
 }
