@@ -39,9 +39,8 @@ class TrayApplication:
 
         self._loggedLeaveDatetime:datetime.datetime = dtConvert.to_datetime(self._settings.get(Config.Sections.State, Config.State.LoggedLeaveDateTime))
 
+        self.stopLogging()
         if eval(self._settings.get(Config.Sections.General, Config.General.ClearLog)) and os.path.isfile(logFile):
-            self.stopLogging()
-            
             try:
                 os.remove(logFile)
             except:
@@ -49,7 +48,7 @@ class TrayApplication:
                     "Already started",
                     "Another instance of this application might already be running.\r\nPlease close this one or close all other instances.")
             
-            self.startLogging(logFile)
+        self.startLogging(logFile)
 
         #logging.basicConfig(level=int(self._settings.get(Config.Sections.General, Config.General.MinLogLevel)), force=True)
         logging.debug('TrayApplication initialized')
@@ -512,11 +511,18 @@ class TrayApplication:
         return image
 
     def startLogging(self, logFile:str):
-            logging.basicConfig(\
+        
+        logLevel = logging.INFO
+        if hasattr(self,'_settings'):
+            logLevel = int(self._settings.get(Config.Sections.General, Config.General.MinLogLevel))
+
+        logging.basicConfig(\
             filename=logFile, \
             encoding='utf-8', \
-            level=logging.INFO  , \
+            level=logLevel, \
             format='%(asctime)s -  %(levelname)s - %(message)s')
+        
+        logging.getLogger().setLevel(logLevel)
 
     def stopLogging(self):
         logging.shutdown()

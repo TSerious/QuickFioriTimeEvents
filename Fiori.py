@@ -2,6 +2,7 @@ import logging
 import shutil
 from bs4 import BeautifulSoup
 import datetime
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.webdriver import BaseWebDriver
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service as FirefoxService
@@ -247,14 +248,14 @@ def get_element(driver:BaseWebDriver, by:By, value:str):
     try:
         element = driver.find_element(By.ID, 'serviceErrorMessageBox')
     except Exception as e:
-        print(f"Exception catched when trying to get element: {str(by)}:{str(value)} | {str(e)}")
+        logging.debug(f"Exception catched when trying to get element: {str(by)}:{str(value)} | {str(e)}")
         element = None
 
     return element
 
 def click(driver:BaseWebDriver, by: By, value: str, retryTries:int = 20) -> bool:
     
-    print(f"Trying to click {value}")
+    logging.debug(f"Trying to click {value}")
     clickCount: int = 0
     clicked = False
     while(clickCount < retryTries):
@@ -262,9 +263,9 @@ def click(driver:BaseWebDriver, by: By, value: str, retryTries:int = 20) -> bool
         catched: bool = False
         try:
             element = wait_and_get_element(driver, by, value)
-            element.click()
+            ActionChains(driver).move_to_element(element).click(element).perform()
         except Exception:
-            print(f"Exception catched while trying to click {value} ({str(clickCount)}/{retryTries})")
+            logging.debug(f"Exception catched while trying to click {value} ({str(clickCount)}/{retryTries})")
             time.sleep(1)
             catched = True
 
@@ -274,7 +275,7 @@ def click(driver:BaseWebDriver, by: By, value: str, retryTries:int = 20) -> bool
             clickCount = 20
             clicked = True 
 
-    print(f"Trying to click {value} succueeded: {str(clicked)}")
+    logging.debug(f"Trying to click {value} succueeded: {str(clicked)}")
     return clicked
 
 def select_event_type(driver:BaseWebDriver, eventType:str) -> bool:
@@ -291,7 +292,7 @@ def select_event_type(driver:BaseWebDriver, eventType:str) -> bool:
     return selected
 
 def get_logged_events(driver:BaseWebDriver):
-    print("Getting logged events")
+    logging.debug("Getting logged events")
     element = wait_and_get_element(driver, By.ID, '__xmlview0--idEventsTable-listUl')
 
     if not element:
@@ -337,7 +338,7 @@ def get_first_event_index(events) -> int:
     return firstEvent
 
 def get_has_event_and_time(events, event:FioriEvent):
-    print(f"Getting has event {str(event)}")
+    logging.debug(f"Getting has event {str(event)}")
 
     if len(events) <= 0:
         return False, None
