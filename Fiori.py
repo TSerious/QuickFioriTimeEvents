@@ -24,6 +24,7 @@ from webdrivermanager import GeckoDriverManager
 from webdrivermanager import EdgeChromiumDriverManager
 import os
 from win32api import GetFileVersionInfo, HIWORD, LOWORD
+from packaging import version as vs
 
 class Driver(Enum):
     Firefox = "Firefox"
@@ -171,24 +172,24 @@ def update_driver(driverSettings:DriverSettings, settings:Settings, useLatest:bo
     if driverSettings._driverManager == None:
         raise Exception("No web driver manager available.")
 
-    latestVersion = driverSettings._driverManager.get_latest_version()
+    latestDriverVersion = driverSettings._driverManager.get_latest_version()
 
-    logging.debug(f"Latest version of web driver is {latestVersion}.")
+    logging.debug(f"Latest version of web driver is {latestDriverVersion}.")
 
-    installedVersion = get_version_number(driverSettings._binaryPath)
+    installedDriverVersion = get_version_number(driverSettings._binaryPath)
 
-    version = installedVersion
-    if useLatest:
-        version = latestVersion
+    driverVersion = installedDriverVersion
+    if useLatest or vs.parse(latestDriverVersion) < vs.parse(installedDriverVersion):
+        driverVersion = latestDriverVersion
 
-    if version != driverSettings._driverVersion or not os.path.exists(driverSettings._driverPath):
+    if driverVersion != driverSettings._driverVersion or not os.path.exists(driverSettings._driverPath):
         logging.debug("Downloading and installing new version of web driver.")
 
-        path = download_driver(driverSettings, version)
+        path = download_driver(driverSettings, driverVersion)
         driverSettings._driverPath = path[1]._str
-        driverSettings._driverVersion = version
+        driverSettings._driverVersion = driverVersion
 
-        settings.set(Config.Sections.State, Config.State.DriverVersion, version)
+        settings.set(Config.Sections.State, Config.State.DriverVersion, driverVersion)
         settings.set(Config.Sections.State, Config.State.DriverPath, driverSettings._driverPath)
 
 def download_driver(driverSettings:DriverSettings, version:str = ''):
