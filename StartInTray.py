@@ -32,12 +32,17 @@ def tray_show_work_time(icon, item):
         messagebox.showinfo('Not arrived', "You haven't logged in with this tool yet.")
         return
 
-    hereTime = datetime.datetime.now() - app.last_arrive_datetime
+    hereTime = datetime.datetime.now() - app.last_arrive_datetime    
 
     msg:str = f"You are here since: {dtConvert.timedelta_to_string(hereTime)}"
 
     if app.pause_accumulated_datetime != None and app.pause_accumulated_datetime.total_seconds() > 0:
-        workTime = datetime.datetime.now() - app.last_arrive_datetime - app.pause_accumulated_datetime
+
+        now = datetime.datetime.now()
+        if (app.is_paused):
+            now = app.pause_start_datetime
+
+        workTime = now - app.last_arrive_datetime - app.pause_accumulated_datetime
         msg = f"{msg}\nWorked for: {dtConvert.timedelta_to_string(workTime)}"
 
     messagebox.showinfo('Working', msg)

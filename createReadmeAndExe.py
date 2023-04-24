@@ -4,7 +4,7 @@ from pyhtml2pdf import converter
 import pyinstaller_versionfile
 import shutil
 
-version="1.7"
+version="1.9"
 outputFolder = "QuickFioriTimeEvents"
 readmeFilename = 'README'
 style = \

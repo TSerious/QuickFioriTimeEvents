@@ -97,7 +97,7 @@ class DriverSettings:
             self._driverManager = GeckoDriverManager()
         elif type == Driver.Edge:
             self._driverManager = EdgeChromiumDriverManager()
-            self._driverManager.edgechromium_driver_base_url = "https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver?maxresults=2000&comp=list&timeout=60000&startAt=10000"
+            self._driverManager.edgechromium_driver_base_url = "https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver?maxresults=4000&comp=list"#&timeout=60000&startAt=10000"
         else:
             self._driverManager = None
 
@@ -485,8 +485,9 @@ class QuickFioriTimeEvents:
             driver.get(self.driverSettings.get_url_time())
             time.sleep(self.WaitTimeAfterPageLoad)
 
-            if not click(driver, By.ID, '__filter0'):
-                raise Exception("Couldn't go to 'Detailed Entry'.")
+            for i in range(3):
+                if not click(driver, By.ID, '__filter0') and i >= 2:
+                    raise Exception("Couldn't go to 'Detailed Entry'.")
 
             time.sleep(1)
 
@@ -548,8 +549,9 @@ class QuickFioriTimeEvents:
             driver.get(self.driverSettings.get_url_time())
             time.sleep(self.WaitTimeAfterPageLoad)
 
-            if not click(driver, By.ID, '__xmlview0--overview'):
-                raise Exception("Couldn't go to 'Time Event List'.")
+            for i in range(3):
+                if not click(driver, By.ID, '__xmlview0--overview') and i >= 2:
+                    raise Exception("Couldn't go to 'Time Event List'.")
 
             time.sleep(2)
 
