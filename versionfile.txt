@@ -31,7 +31,7 @@ VSVersionInfo(
       StringTable(
         u'040904B0',
         [StringStruct(u'CompanyName', u''),
-        StringStruct(u'FileDescription', u'Taskbar tool to quickly add time events in SAP Fiori.'),
+        StringStruct(u'FileDescription', u'QuickFioriTimeEvents 1.9'),
         StringStruct(u'FileVersion', u'1.9.0.0'),
         StringStruct(u'InternalName', u'QuickFioriTimeEvents'),
         StringStruct(u'LegalCopyright', u''),

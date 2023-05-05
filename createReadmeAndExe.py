@@ -90,7 +90,7 @@ def create_version_file():
     pyinstaller_versionfile.create_versionfile(
         output_file="versionfile.txt",
         version=version,
-        file_description="Taskbar tool to quickly add time events in SAP Fiori.",
+        file_description=f"QuickFioriTimeEvents {version}",
         internal_name="QuickFioriTimeEvents",
         original_filename="QuickFioriTimeEvents.exe",
         product_name="QuickFioriTimeEvents"

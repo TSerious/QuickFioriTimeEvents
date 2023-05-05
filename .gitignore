@@ -133,3 +133,6 @@ dmypy.json
 *.zip
 /QuickFioriTimeEvents
 README.html
+
+/Drivers
+/QuickFioriTimeEvents.exe

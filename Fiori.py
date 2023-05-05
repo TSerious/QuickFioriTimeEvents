@@ -1,5 +1,7 @@
 import logging
 import shutil
+import sys
+import traceback
 from bs4 import BeautifulSoup
 import datetime
 from selenium.webdriver.common.action_chains import ActionChains
@@ -20,8 +22,8 @@ from Config import Settings;
 import Config;
 from enum import Enum
 import DatetimeConverters as dtConvert
-from webdrivermanager import GeckoDriverManager
-from webdrivermanager import EdgeChromiumDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 import os
 from win32api import GetFileVersionInfo, HIWORD, LOWORD
 from packaging import version as vs
@@ -93,11 +95,13 @@ class DriverSettings:
         self._driverVersion = driverVersion
         self._driverPath = driverPath
 
+        os.environ['WDM_PROGRESS_BAR'] = str(0)
+
         if type == Driver.Firefox:
-            self._driverManager = GeckoDriverManager()
+            self._driverManager = GeckoDriverManager(path = r".\\Drivers")
         elif type == Driver.Edge:
-            self._driverManager = EdgeChromiumDriverManager()
-            self._driverManager.edgechromium_driver_base_url = "https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver?maxresults=4000&comp=list"#&timeout=60000&startAt=10000"
+            self._driverManager = EdgeChromiumDriverManager(path = r".\\Drivers")
+            #self._driverManager.edgechromium_driver_base_url = "https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver?maxresults=4000&comp=list"#&timeout=60000&startAt=10000"
         else:
             self._driverManager = None
 
@@ -172,42 +176,52 @@ def update_driver(driverSettings:DriverSettings, settings:Settings, useLatest:bo
     if driverSettings._driverManager == None:
         raise Exception("No web driver manager available.")
 
-    latestDriverVersion = driverSettings._driverManager.get_latest_version()
-
-    logging.debug(f"Latest version of web driver is {latestDriverVersion}.")
-
     installedDriverVersion = get_version_number(driverSettings._binaryPath)
 
-    driverVersion = installedDriverVersion
-    if useLatest or vs.parse(latestDriverVersion) < vs.parse(installedDriverVersion):
-        driverVersion = latestDriverVersion
+    if not useLatest:
+        if driverSettings.type == Driver.Firefox:
+            driverSettings._driverManager = GeckoDriverManager(version=installedDriverVersion, path = r".\\Drivers")
+        elif driverSettings.type == Driver.Edge:
+            driverSettings._driverManager = EdgeChromiumDriverManager(version=installedDriverVersion, path = r".\\Drivers")
+    
+    download_driver(driverSettings)
 
-    if driverVersion != driverSettings._driverVersion or not os.path.exists(driverSettings._driverPath):
-        logging.debug("Downloading and installing new version of web driver.")
+    settings.set(Config.Sections.State, Config.State.DriverVersion, get_version_number(driverSettings._binaryPath))
+    settings.set(Config.Sections.State, Config.State.DriverPath, driverSettings._driverPath)
 
-        path = download_driver(driverSettings, driverVersion)
-        driverSettings._driverPath = path[1]._str
-        driverSettings._driverVersion = driverVersion
+def download_driver(driverSettings:DriverSettings):
 
-        settings.set(Config.Sections.State, Config.State.DriverVersion, driverVersion)
-        settings.set(Config.Sections.State, Config.State.DriverPath, driverSettings._driverPath)
+    logging.debug(f"current driver path is: {driverSettings._driverPath}")
 
-def download_driver(driverSettings:DriverSettings, version:str = ''):
-    if (len(version) <= 0):
-        version = "latest"
-
-    path:str = ''
     try:
-        path = driverSettings._driverManager.download_and_install(version=version)
-    except:
+        logging.debug("about to install driver")
+        newPath = driverSettings._driverManager.install()
+        driverSettings._driverPath = newPath
+        logging.debug("driver installed")
+    except Exception as e:
+        logging.debug(f"failed to install driver: {e}")
+        with open('tb.txt', 'w+') as f:
+            traceback.print_exc(None, f, True)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback, limit=None, file=f)
+
+            traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                limit=None, file=f)
+        
+        logging.debug(f"failed to install driver: {e.with_traceback(None)}")
+        logging.debug(f"removing current driver")
         path = os.path.dirname(driverSettings._driverPath)
         path = os.path.abspath(path + "\\..")
-        shutil.rmtree(path)
-        os.mkdir(path)
-        os.mkdir(path + "\\bin")
-        path = driverSettings._driverManager.download_and_install(version=version)
+        if os.path.exists(path):
+            shutil.rmtree(path)
 
-    return path    
+        os.mkdir(path)
+
+        logging.debug("about to install driver again")
+        driverSettings._driverPath = driverSettings._driverManager.install()
+        logging.debug("driver installed")
+
+#     return path    
 
 def get_firefox_driver(driverSettings:DriverSettings, settings:Settings) -> BaseWebDriver:
 
@@ -360,7 +374,7 @@ def get_has_event_and_time(events, event:FioriEvent):
 def get_pause_state(events):
 
     if len(events) <= 0:
-        return False, 0
+        return False, 0, None
     
     i = 0
     accumulatedSeconds = 0
